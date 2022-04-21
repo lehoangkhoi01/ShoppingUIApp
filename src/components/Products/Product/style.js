@@ -2,7 +2,8 @@ import { makeStyles } from "@material-ui/core/styles";
 
 export default makeStyles(() => ({
   root: {
-    maxWidth: "100%"
+    maxWidth: "100%",
+    height: "100%",
   },
   media: {
     height: "45vh",
@@ -12,10 +13,10 @@ export default makeStyles(() => ({
   },
   cardActions: {
     display: "flex",
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
   cardContent: {
     display: "flex",
-    justifyContent: "space-between"
-  }
+    justifyContent: "space-between",
+  },
 }));
