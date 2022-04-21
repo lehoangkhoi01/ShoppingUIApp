@@ -1,16 +1,15 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Container, Typography, Button, Grid } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import useStyles from "./style";
 import CartItem from "./CartItem/CartItem";
+import CartContext from "../../context/Cart/CartContext";
+import { formatPriceWithSymbol } from "../../lib/utils";
 
-const Cart = ({
-  cart,
-  handleUpdateCartQty,
-  handleRemoveFromCart,
-  handleEmptyCart
-}) => {
+const Cart = () => {
   const classes = useStyles();
+  const { cartItems, emptyCart } = useContext(CartContext);
+  const [totalPrice, setTotalPrice] = useState(0);
 
   const EmptyCart = () => (
     <Typography variant="subtitle1">
@@ -26,19 +25,15 @@ const Cart = ({
   const FilledCart = () => (
     <>
       <Grid container spacing={3}>
-        {cart.line_items.map(item => (
+        {cartItems.map((item) => (
           <Grid item xs={12} sm={4} key={item.id}>
-            <CartItem
-              item={item}
-              onUpdateCartQty={handleUpdateCartQty}
-              onRemoveFromCart={handleRemoveFromCart}
-            />
+            <CartItem item={item} />
           </Grid>
         ))}
       </Grid>
       <div className={classes.cardDetails}>
         <Typography variant="h4">
-          Subtotal: {cart.subtotal.formatted_with_symbol}
+          Subtotal: {formatPriceWithSymbol(totalPrice)}
         </Typography>
         <div>
           <Button
@@ -47,11 +42,13 @@ const Cart = ({
             type="button"
             variant="contained"
             color="secondary"
-            onClick={handleEmptyCart}
+            onClick={emptyCart}
           >
             Empty cart
           </Button>
           <Button
+            component={Link}
+            to="/checkout"
             className={classes.checkoutButton}
             size="large"
             type="button"
@@ -65,7 +62,15 @@ const Cart = ({
     </>
   );
 
-  if (!cart.line_items) return "Loading...";
+  useEffect(() => {
+    let totalPrice = 0;
+    if (cartItems.length > 0) {
+      cartItems.forEach((item) => {
+        totalPrice += item.price;
+      });
+    }
+    setTotalPrice(totalPrice);
+  }, [cartItems]);
 
   return (
     <Container>
@@ -73,7 +78,7 @@ const Cart = ({
       <Typography className={classes.title} variant="h3" gutterBottom>
         Your shopping cart
       </Typography>
-      {!cart.line_items.length ? <EmptyCart /> : <FilledCart />}
+      {!cartItems.length ? <EmptyCart /> : <FilledCart />}
     </Container>
   );
 };

@@ -1,62 +1,128 @@
-import React, { useState, useEffect } from "react";
-import { commerce } from "./lib/commerce";
-import { Products, Navbar, Cart } from "./components";
+import React, { useState, useEffect, useContext } from "react";
+import { Products, Navbar, Cart, Checkout } from "./components";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { BASE_URL } from "./constant";
+import axios from "axios";
+import CartContext from "./context/Cart/CartContext";
 
 function App() {
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState({});
+  const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState({});
+  const [filterCategory, setFilterCategory] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const { cartItems, getItem } = useContext(CartContext);
 
   const fetchProducts = async () => {
-    const { data } = await commerce.products.list();
-    setProducts(data);
+    await axios
+      .get(BASE_URL + "/Products")
+      .then((res) => {
+        setProducts(res.data);
+        setFilterCategory(0);
+        sessionStorage.setItem("filterCategory", 0);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
-  const fetchCart = async () => {
-    const cart = await commerce.cart.retrieve();
-    setCart(cart);
+  const fetchCategories = async () => {
+    await axios
+      .get(BASE_URL + "/Categories")
+      .then((res) => {
+        setCategories(res.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
-  const handleAddToCart = async (productId, quantity) => {
-    const item = await commerce.cart.add(productId, quantity);
-    setCart(item.cart);
+  const getCategoryById = async (id) => {
+    if (id > 0) {
+      await axios
+        .get(BASE_URL + "/Categories/" + id)
+        .then((res) => {
+          setCategory(res.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else {
+      setCategory({});
+    }
   };
 
-  const handleUpdateCartQuantity = async (productId, quantity) => {
-    const respone = await commerce.cart.update(productId, { quantity });
-    setCart(respone.cart);
+  const searchProductByCategory = async (categoryId) => {
+    await axios
+      .get(BASE_URL + "/Products/Category/" + categoryId)
+      .then((res) => {
+        setProducts(res.data);
+        setFilterCategory(categoryId);
+        sessionStorage.setItem("filterCategory", categoryId);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
-  const handleRemoveFromCart = async productId => {
-    const respone = await commerce.cart.remove(productId);
-    setCart(respone.cart);
-  };
-
-  const handleEmptyCart = async () => {
-    const respone = await commerce.cart.empty();
-    setCart(respone.cart);
+  const searchProductByName = async (searchValue) => {
+    if (!searchValue || searchValue === "") {
+      return;
+    }
+    await axios
+      .get(BASE_URL + "/Products/Search/" + searchValue)
+      .then((res) => {
+        setProducts(res.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   useEffect(() => {
-    fetchProducts();
-    fetchCart();
+    const filter = sessionStorage.getItem("filterCategory");
+    if (filter > 0) {
+      searchProductByCategory(filter);
+    } else {
+      fetchProducts();
+    }
+    fetchCategories();
+    getItem();
   }, []);
+
+  useEffect(() => {
+    let total = 0;
+    if (cartItems.length > 0) {
+      cartItems.forEach((item) => {
+        total += item.quantity;
+      });
+    }
+    setTotalItems(total);
+  }, [cartItems]);
+
+  useEffect(() => {
+    getCategoryById(filterCategory);
+  }, [filterCategory]);
 
   return (
     <Router>
       <div className="App">
-        <Navbar totalItems={cart.total_items} />
+        <Navbar
+          totalItems={totalItems}
+          categories={categories}
+          searchProductByCategory={searchProductByCategory}
+          searchAll={fetchProducts}
+          searchByName={searchProductByName}
+        />
         <Switch>
           <Route exact path="/">
-            <Products products={products} onAddToCart={handleAddToCart} />;
+            <Products products={products} category={category} />
           </Route>
           <Route exact path="/cart">
-            <Cart
-              cart={cart}
-              handleUpdateCartQty={handleUpdateCartQuantity}
-              handleRemoveFromCart={handleRemoveFromCart}
-              handleEmptyCart={handleEmptyCart}
-            />
+            <Cart />
+          </Route>
+          <Route exact path="/checkout">
+            <Checkout />
           </Route>
         </Switch>
       </div>

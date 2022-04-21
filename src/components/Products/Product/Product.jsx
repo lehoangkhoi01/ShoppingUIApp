@@ -1,37 +1,40 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   Card,
   CardMedia,
   CardContent,
   CardActions,
   Typography,
-  IconButton
+  IconButton,
 } from "@material-ui/core";
 
 import { AddShoppingCart } from "@material-ui/icons";
 import useStyles from "./style";
+import { formatPriceWithSymbol } from "../../../lib/utils";
+import CartContext from "../../../context/Cart/CartContext";
 
-function Product({ product, onAddToCart }) {
+function Product({ product }) {
   const classes = useStyles();
+  const { addToCart, cartItems } = useContext(CartContext);
 
   return (
-    <Card className="root">
+    <Card className={classes.root}>
       <CardMedia
         className={classes.media}
-        image={product.image.url}
+        image={product.imageUrl}
         title={product.name}
       />
       <CardContent>
         <div className={classes.cardContent}>
-          <Typography variant="h5" gutterBottom>
-            {product.name}
+          <Typography variant="h6" gutterBottom>
+            {product.productName}
           </Typography>
-          <Typography variant="h5">
-            {product.price.formatted_with_symbol}
+          <Typography variant="h6">
+            {formatPriceWithSymbol(product.price)}
           </Typography>
         </div>
         <Typography
-          dangerouslySetInnerHTML={{ __html: product.description }}
+          dangerouslySetInnerHTML={{ __html: product.productDescription }}
           variant="body2"
           color="textSecondary"
         />
@@ -40,7 +43,7 @@ function Product({ product, onAddToCart }) {
       <CardActions disableSpacing className={classes.cardActions}>
         <IconButton
           aria-label="Add to cart"
-          onClick={() => onAddToCart(product.id, 1)}
+          onClick={() => addToCart(product, 1, cartItems)}
         >
           <AddShoppingCart />
         </IconButton>
